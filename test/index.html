@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Higher/Lower - Chỉ Hiện Số (1-13)</title>
+<style>
+  body{
+    font-family: 'Segoe UI', sans-serif;
+    background: #0d0d1f;
+    color: #fff;
+    padding: 20px;
+    margin: 0;
+  }
+  .box{
+    max-width: 960px;
+    margin: 20px auto;
+    background: #1a1a2e;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+    text-align: center;
+  }
+  h1{color:#00ffff;}
+  input{padding:10px;border-radius:8px;border:none;width:380px;font-size:16px;}
+  button{
+    padding:16px 32px;
+    margin:10px;
+    font-size:18px;
+    font-weight:bold;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    transition:0.3s;
+  }
+  button:hover{transform:scale(1.05);}
+  .higher{background:#4caf50;color:#fff;}
+  .lower{background:#f44336;color:#fff;}
+  .other{background:#2196f3;color:#fff;}
+
+  /* Lá bài hiện tại - chỉ hiện số to đùng */
+  .current-card{
+    font-size: 180px;
+    font-weight: bold;
+    width: 260px;
+    height: 360px;
+    line-height: 360px;
+    margin: 30px auto;
+    background: linear-gradient(135deg, #fff, #f0f0f0);
+    color: #000;
+    border-radius: 24px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+  }
+
+  .info{
+    display:flex;
+    justify-content:center;
+    gap:40px;
+    background:#16213e;
+    padding:20px;
+    border-radius:12px;
+    margin:20px 0;
+    font-size:20px;
+  }
+  #log{
+    background:#000;
+    color:#0f0;
+    padding:15px;
+    height:360px;
+    overflow-y:auto;
+    font-family:Consolas;
+    border-radius:10px;
+    margin-top:20px;
+    text-align:left;
+  }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>Higher / Lower Card Game</h1>
+  <small style="color:#00ffaa;">Chỉ hiện số 1 → 13 (dễ test cực kỳ)</small>
+
+  <div style="margin:20px 0;">
+    WS URL: <input id="wsUrl" value="ws://localhost:3000/v1/api/ws">
+    <button class="other" onclick="connectWS()">Connect</button>
+    <button onclick="disconnectWS()">Disconnect</button>
+  </div>
+
+  <!-- LÁ BÀI HIỆN TẠI - CHỈ HIỆN SỐ TO ĐÙNG -->
+  <div class="current-card" id="currentCard">?</div>
+
+  <!-- NÚT ĐOÁN -->
+  <div>
+    <button class="higher" onclick="guessHigher()">HIGHER (over)</button>
+    <button class="lower" onclick="guessLower()">LOWER (under)</button>
+  </div>
+
+  <!-- CÁC NÚT KHÁC -->
+  <div style="margin-top:30px;">
+    <button class="other" onclick="deposit()">Deposit 1000</button>
+    <button class="other" onclick="startGame()">Start Game (bet 100)</button>
+    <button class="other" onclick="endSession()">End Session</button>
+    <button class="other" onclick="getStats()">Get Stats</button>
+  </div>
+
+  <!-- THÔNG TIN -->
+  <div class="info">
+    <div>Table Balance: <strong id="table">0</strong></div>
+    <div>User Balance: <strong id="user">0</strong></div>
+    <div>Win Streak: <strong id="streak">0</strong></div>
+  </div>
+
+  <h3>Log</h3>
+  <div id="log"></div>
+</div>
+
+<script>
+let socket;
+
+// Log đẹp có giờ
+function log(m){
+  const l = document.getElementById("log");
+  const t = new Date().toLocaleTimeString();
+  l.innerText += `[${t}] ${m}\n`;
+  l.scrollTop = l.scrollHeight;
+}
+
+// Chỉ hiện số 1-13 thôi, không A J Q K
+function cardToNumber(c){
+  return c >= 1 && c <= 13 ? c : "?";
+}
+
+function connectWS(){
+  const url = document.getElementById("wsUrl").value.trim();
+  if(!url) return alert("Nhập URL WS đi bro!");
+  socket = new WebSocket(url);
+
+  socket.onopen = () => log("Connected thành công!");
+  socket.onclose = () => log("Disconnected");
+  socket.onerror = () => log("Lỗi kết nối");
+
+  socket.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      const eventName = msg.t;
+      const payload = msg.d;
+      if(!eventName) throw "No t";
+
+      log(`← ${eventName}`);
+      const gd = payload?.gameData;
+
+      // 1. Bắt đầu session → hiện số đầu tiên
+      if(eventName === 'game:session_started' && gd?.currentCard){
+        document.getElementById("currentCard").innerText = cardToNumber(gd.currentCard);
+        updateInfo(gd);
+      }
+
+      // 2. Kết quả vòng
+      if(eventName === 'game:round_result'){
+        const result = gd?.result;
+        const next = gd?.round?.nextCard;
+
+        if(result === 'win' && next){
+          document.getElementById("currentCard").innerText = cardToNumber(next);
+          log(`WIN +${gd.winAmount || 0} → Lá mới: ${next}`);
+          if(gd.jackpot) log(`JACKPOT!!! +${gd.jackpot.payoutAmount} ĐỈNH CAO!`);
+        }
+        if(result === 'lose'){
+          document.getElementById("currentCard").innerText = "LOSE";
+          setTimeout(() => document.getElementById("currentCard").innerText = "?", 2000);
+        }
+        updateInfo(gd);
+      }
+
+      // Các event khác
+      if(eventName === 'game:deposit_success' || 
+         eventName === 'game:session_ended' || 
+         eventName === 'game:stats'){
+        updateInfo(gd);
+      }
+
+      // Reset khi thua hoặc end
+      if(eventName === 'game:session_ended' || gd?.result === 'lose'){
+        setTimeout(() => document.getElementById("currentCard").innerText = "?", 1500);
+      }
+
+    } catch(err){
+      log("RAW ← " + e.data);
+    }
+  };
+}
+
+function updateInfo(gd){
+  if(gd?.tableBalance !== undefined) document.getElementById("table").innerText = Number(gd.tableBalance).toLocaleString();
+  if(gd?.userBalance !== undefined) document.getElementById("user").innerText = Number(gd.userBalance).toLocaleString();
+  if(gd?.session?.winStreak !== undefined) document.getElementById("streak").innerText = gd.session.winStreak;
+}
+
+function disconnectWS(){ if(socket) socket.close(); }
+
+function send(event, data){
+  if(!socket || socket.readyState !== 1) return alert("Chưa kết nối!");
+  socket.send(JSON.stringify({ t: event, d: data }));
+  log(`→ ${event}`);
+}
+
+// Thay userId của bạn vào đây
+const USER_ID = "66203495-a53d-417b-a920-06c9066032b0";
+
+function deposit()    { send("game:deposit",      {userId: USER_ID, amount:1000}); }
+function startGame()  { send("game:start",        {userId: USER_ID, betAmount:1000}); }
+function guessHigher(){ send("game:guess",        {userId: USER_ID, choice:"over",  betAmount:1000}); }
+function guessLower() { send("game:guess",        {userId: USER_ID, choice:"under", betAmount:1000}); }
+function endSession() { send("game:end_session", {userId: USER_ID}); }
+function getStats()   { send("game:get_stats",    {userId: USER_ID}); }
+</script>
+</body>
+</html>
