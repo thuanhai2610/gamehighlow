@@ -2,10 +2,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Round } from './round.entity';
+import { Min } from 'class-validator';
 
 @Entity()
 export class Bet {
@@ -13,6 +15,7 @@ export class Bet {
   betId: string;
 
   @Column()
+  @Index('idx_bet_user')
   userId: string;
 
   @ManyToOne(() => Round, (round) => round.bets, { onDelete: 'CASCADE' })
@@ -21,13 +24,15 @@ export class Bet {
   @Column()
   choice: 'over' | 'under';
 
-  @Column()
+  @Column({ default: 0 })
+  @Min(0)
   amount: number;
 
-  @Column()
+  @Column({ default: 0 })
   win: boolean;
 
-  @Column()
+  @Column({ default: 0 })
+  @Min(0)
   winAmount: number;
 
   @CreateDateColumn()

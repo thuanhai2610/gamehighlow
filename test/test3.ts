@@ -60,55 +60,26 @@ export class GameService {
   }
 
   async depositToTable(userId: string, amount: number) {
+    const session = await this.ensureSession(userId);
     if (amount <= 0) throw new BadRequestException('Deposit > 0');
-    const query = this.sessionRepo.manager.connection.createQueryRunner();
-    await query.connect();
-    await query.startTransaction('READ COMMITTED');
-    try {
-      const user = await query.manager.findOne(User, {
-        where: { userId },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (!user) throw new NotFoundException('User not found');
-      if (user.balance < amount)
-        throw new BadRequestException('Insufficient balance');
-      let session = await query.manager.findOne(PlayerSession, {
-        where: { userId },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (!session) {
-        session = query.manager.create(PlayerSession, {
-          userId,
-          winStreak: 0,
-          cardsHistory: [],
-          lastBetAmount: 0,
-          isPlaying: false,
-          tableBalance: 0,
-        });
-        await query.manager.save(session);
-      }
-      if (session?.isPlaying) {
-        throw new BadRequestException('Khong the nap tien trong khi choi');
-      }
-      user.balance -= amount;
+    if (session.isPlaying)
+      throw new BadRequestException('Khong the nap tien trong khi choi');
+    const user = await this.userRepo.findOne({ where: { userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.balance < amount)
+      throw new BadRequestException('Insufficient balance');
+    user.balance -= amount;
+    await this.userRepo.save(user);
 
-      session.tableBalance += amount;
-      await query.manager.save(user);
+    session.tableBalance += amount;
+    await this.sessionRepo.save(session);
+    this.sessions.set(userId, session);
 
-      await query.manager.save(session);
-      this.sessions.set(userId, session);
-      await query.commitTransaction();
-      return {
-        tableBalance: session.tableBalance,
-        userBalance: user.balance,
-        depositAmount: amount,
-      };
-    } catch (error) {
-      await query.rollbackTransaction();
-      throw error;
-    } finally {
-      await query.release();
-    }
+    return {
+      tableBalance: session.tableBalance,
+      userBalance: user.balance,
+      depositAmount: amount,
+    };
   }
 
   async startSession(userId: string) {
@@ -184,23 +155,13 @@ export class GameService {
           betAmount,
         });
         await this.roundRepo.save(round);
-        const bet = this.betRepo.create({
-          round,
-          userId,
-          choice,
-          amount: betAmount,
-        });
-        await this.betRepo.save(bet);
+
         return {
           result: 'draw',
           message: 'Hoa',
           refund: betAmount,
           currentCard,
           nextCard,
-          bet,
-          round,
-          multiplier: 1.0,
-          winAmount: 0,
           session,
           tableBalance: session.tableBalance,
         };
@@ -228,7 +189,7 @@ export class GameService {
       });
       await this.betRepo.save(bet);
       if (win) {
-        return this.setWin(
+        return await this.setWin(
           userId,
           session,
           winAmount,
@@ -239,7 +200,14 @@ export class GameService {
           multiplier,
         );
       } else {
-        return this.setLose(userId, round, bet, session, multiplier, betAmount);
+        return await this.setLose(
+          userId,
+          round,
+          bet,
+          session,
+          multiplier,
+          betAmount,
+        );
       }
     }
     const win =
@@ -290,45 +258,26 @@ export class GameService {
     }
   }
   async endSession(userId: string) {
-    const query = this.sessionRepo.manager.connection.createQueryRunner();
-    await query.connect();
-    await query.startTransaction('READ COMMITTED');
-    try {
-      const session = await query.manager.findOne(PlayerSession, {
-        where: { userId },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (!session) throw new NotFoundException('Session not found');
+    const session = await this.ensureSession(userId);
+    const user = await this.userRepo.findOne({ where: { userId } });
+    if (!user) throw new NotFoundException('User not found');
 
-      const user = await query.manager.findOne(User, {
-        where: { userId },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (!user) throw new NotFoundException('User not found');
-
-      const withdrawAmount = session.tableBalance;
-      if (withdrawAmount > 0) {
-        user.balance += withdrawAmount;
-        await query.manager.save(user);
-      }
-      session.isPlaying = false;
-      session.winStreak = 0;
-      session.cardsHistory = [];
-      session.tableBalance = 0;
-      await query.manager.save(session);
-      await query.commitTransaction();
-      this.sessions.set(userId, session);
-      return {
-        session,
-        userBalance: user.balance,
-        withdrawAmount,
-      };
-    } catch (error) {
-      await query.rollbackTransaction();
-      throw error;
-    } finally {
-      await query.release();
+    const withdrawAmount = session.tableBalance;
+    if (withdrawAmount > 0) {
+      user.balance += withdrawAmount;
+      await this.userRepo.save(user);
     }
+    session.isPlaying = false;
+    session.winStreak = 0;
+    session.cardsHistory = [];
+    session.tableBalance = 0;
+    await this.sessionRepo.save(session);
+    this.sessions.set(userId, session);
+    return {
+      session,
+      userBalance: user.balance,
+      withdrawAmount,
+    };
   }
   async getSessionStats(userId: string) {
     const session = await this.ensureSession(userId);

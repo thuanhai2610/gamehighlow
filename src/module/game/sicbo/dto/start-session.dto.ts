@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsIn, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class StartSessionDto {
   @IsString()

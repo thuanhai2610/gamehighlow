@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity()
@@ -11,12 +12,13 @@ export class Jackpot {
   jackbotId: number;
 
   @Column()
+  @Index()
   userId: string;
 
   @Column()
   roundIds: string;
 
-  @Column()
+  @Column({ default: 0 })
   payoutAmount: number;
 
   @CreateDateColumn()

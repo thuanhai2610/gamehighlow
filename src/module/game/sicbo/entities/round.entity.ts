@@ -2,10 +2,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Bet } from './bet.entity';
+import { Min } from 'class-validator';
 
 @Entity()
 export class Round {
@@ -13,18 +15,20 @@ export class Round {
   roundId: string;
 
   @Column()
+  @Index('idx_round_user')
   userId: string;
 
-  @Column()
-  currentCard: number;
+  @Column('simple-json')
+  currentCard: { rank: number; card: number };
 
-  @Column()
-  nextCard: number;
+  @Column('simple-json')
+  nextCard: { rank: number; card: number };
 
   @Column({ default: false })
   win: boolean;
 
   @Column()
+  @Min(0)
   betAmount: number;
 
   @CreateDateColumn()

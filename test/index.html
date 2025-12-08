@@ -2,112 +2,241 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Higher/Lower - Chỉ Hiện Số (1-13)</title>
+<title>Higher/Lower Pro - Auto Guess Timer</title>
 <style>
   body{
-    font-family: 'Segoe UI', sans-serif;
-    background: #0d0d1f;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #0f0f23, #1a1a2e);
     color: #fff;
-    padding: 20px;
     margin: 0;
+    padding: 20px;
+    min-height: 100vh;
   }
   .box{
-    max-width: 960px;
-    margin: 20px auto;
-    background: #1a1a2e;
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+    max-width: 1000px;
+    margin: 40px auto;
+    background: #16213e;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
     text-align: center;
+    position: relative;
   }
-  h1{color:#00ffff;}
-  input{padding:10px;border-radius:8px;border:none;width:380px;font-size:16px;}
-  button{
-    padding:16px 32px;
-    margin:10px;
-    font-size:18px;
-    font-weight:bold;
-    border:none;
-    border-radius:12px;
-    cursor:pointer;
-    transition:0.3s;
+  h1{
+    color: #00ffff;
+    text-shadow: 0 0 20px #00ffff;
   }
-  button:hover{transform:scale(1.05);}
-  .higher{background:#4caf50;color:#fff;}
-  .lower{background:#f44336;color:#fff;}
-  .other{background:#2196f3;color:#fff;}
 
-  /* Lá bài hiện tại - chỉ hiện số to đùng */
-  .current-card{
-    font-size: 180px;
-    font-weight: bold;
-    width: 260px;
-    height: 360px;
-    line-height: 360px;
-    margin: 30px auto;
-    background: linear-gradient(135deg, #fff, #f0f0f0);
-    color: #000;
-    border-radius: 24px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-    text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+  .game-area {
+    position: relative;
+    width: 280px;
+    height: 400px;
+    margin: 40px auto;
   }
+
+  .card-container {
+    perspective: 1200px;
+    width: 280px;
+    height: 400px;
+  }
+
+  .playing-card {
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 20px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+    overflow: hidden;
+    transition: all 0.5s ease;
+  }
+  .playing-card:hover { transform: translateY(-15px) rotateY(8deg); }
+
+  .card-corner { position: absolute; font-weight: bold; font-size: 36px; line-height: 1; }
+  .top-left { top: 16px; left: 20px; }
+  .bottom-right { bottom: 16px; right: 20px; transform: rotate(180deg); }
+
+  .card-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 200px;
+    font-weight: bold;
+  }
+
+  .suit { font-size: 56px; display: block; margin-top: -10px; }
+  .red { color: #e74c3c; }
+  .black { color: #2c3e50; }
+
+  /* Timer Overlay - XÓA PHẦN NÀY */
+
+  /* Auto Guess Timer - Hiển thị thời gian còn lại để guess */
+  .auto-timer-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 0 0 20px 20px;
+    overflow: hidden;
+    z-index: 5;
+  }
+
+  .auto-timer-progress {
+    height: 100%;
+    background: linear-gradient(90deg, #00ff00, #ffaa00, #ff0000);
+    transition: width 1s linear;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+  }
+
+  .auto-timer-text {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #00ffaa;
+    z-index: 6;
+    display: none;
+  }
+
+  .auto-timer-text.warning {
+    color: #ff0000;
+    animation: blink 0.5s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  button{
+    padding: 16px 36px;
+    margin: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  button:hover{ transform: scale(1.08); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+  .higher{background:#27ae60; color:white;}
+  .lower{background:#c0392b; color:white;}
+  .other{background:#2980b9; color:white;}
 
   .info{
     display:flex;
     justify-content:center;
-    gap:40px;
-    background:#16213e;
-    padding:20px;
-    border-radius:12px;
-    margin:20px 0;
-    font-size:20px;
+    gap:50px;
+    background:#0f1629;
+    padding:25px;
+    border-radius:16px;
+    margin:30px 0;
+    font-size:22px;
   }
   #log{
     background:#000;
     color:#0f0;
-    padding:15px;
-    height:360px;
+    padding:20px;
+    height:400px;
     overflow-y:auto;
-    font-family:Consolas;
-    border-radius:10px;
-    margin-top:20px;
+    font-family: 'Courier New', monospace;
+    border-radius:12px;
+    margin-top:30px;
     text-align:left;
+    border: 1px solid #0f0;
+  }
+
+  .jackpot-explosion {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 120px;
+    font-weight: bold;
+    color: gold;
+    text-shadow: 0 0 40px gold;
+    animation: jackpotAnim 2.5s ease-out forwards;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  @keyframes jackpotAnim {
+    0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+    60% { transform: translate(-50%, -50%) scale(1.4) rotate(10deg); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2) rotate(20deg); opacity: 0; }
+  }
+
+  .bet-info {
+    background: #1a3a52;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 20px 0;
+    font-size: 18px;
+    color: #ffaa00;
   }
 </style>
 </head>
 <body>
 <div class="box">
-  <h1>Higher / Lower Card Game</h1>
-  <small style="color:#00ffaa;">Chỉ hiện số 1 → 13 (dễ test cực kỳ)</small>
+  <h1>HIGHER / LOWER PRO</h1>
+  <small>Auto All-in • Timer 120s • Auto Guess khi hết giờ</small>
 
-  <div style="margin:20px 0;">
-    WS URL: <input id="wsUrl" value="ws://localhost:3000/v1/api/ws">
+  <div style="margin:30px 0;">
+    WS URL: <input id="wsUrl" value="ws://localhost:3000/v1/api/ws" style="padding:12px;width:400px;border-radius:10px;border:none;font-size:16px;">
     <button class="other" onclick="connectWS()">Connect</button>
-    <button onclick="disconnectWS()">Disconnect</button>
+    <button class="other" onclick="disconnectWS()">Disconnect</button>
   </div>
 
-  <!-- LÁ BÀI HIỆN TẠI - CHỈ HIỆN SỐ TO ĐÙNG -->
-  <div class="current-card" id="currentCard">?</div>
+  <div class="bet-info">
+    ⏱️ Bạn có 120 giây để chọn • Nếu không chọn → Auto random Over/Under
+  </div>
 
-  <!-- NÚT ĐOÁN -->
+  <!-- KHU VỰC CHƠI -->
+  <div class="game-area">
+    <div class="card-container">
+      <div class="playing-card" id="card">
+        <div class="card-corner top-left"><span class="num">?</span><span class="suit"></span></div>
+        <div class="card-center"><span class="num">?</span></div>
+        <div class="card-corner bottom-right"><span class="num">?</span><span class="suit"></span></div>
+      </div>
+    </div>
+
+    <!-- Auto Guess Timer -->
+    <div class="auto-timer-text" id="autoTimerText">120s</div>
+    <div class="auto-timer-bar">
+      <div class="auto-timer-progress" id="autoTimerProgress" style="width: 100%"></div>
+    </div>
+  </div>
+
   <div>
-    <button class="higher" onclick="guessHigher()">HIGHER (over)</button>
-    <button class="lower" onclick="guessLower()">LOWER (under)</button>
+    <button class="higher" id="btnHigher" onclick="guessHigher()">HIGHER (Over)</button>
+    <button class="lower" id="btnLower" onclick="guessLower()">LOWER (Under)</button>
   </div>
 
-  <!-- CÁC NÚT KHÁC -->
-  <div style="margin-top:30px;">
+  <div style="margin-top:40px;">
     <button class="other" onclick="deposit()">Deposit 1000</button>
-    <button class="other" onclick="startGame()">Start Game (bet 100)</button>
-    <button class="other" onclick="endSession()">End Session</button>
-    <button class="other" onclick="getStats()">Get Stats</button>
+    <button class="other" onclick="startGame()">Start Game</button>
+    <button class="other" onclick="endSession()">End & Withdraw</button>
+    <button class="other" onclick="getStats()">Stats</button>
   </div>
 
-  <!-- THÔNG TIN -->
   <div class="info">
-    <div>Table Balance: <strong id="table">0</strong></div>
-    <div>User Balance: <strong id="user">0</strong></div>
-    <div>Win Streak: <strong id="streak">0</strong></div>
+    <div>Table: <strong id="table">0</strong></div>
+    <div>User: <strong id="user">0</strong></div>
+    <div>Streak: <strong id="streak">0</strong></div>
+    <div>Bet: <strong id="currentBet">0</strong></div>
   </div>
 
   <h3>Log</h3>
@@ -116,103 +245,263 @@
 
 <script>
 let socket;
+let isProcessing = false;
+const USER_ID = "9250fc64-dc44-4f8d-93bc-56b37ede9bac";
 
-// Log đẹp có giờ
-function log(m){
+// Auto guess timer từ server
+let serverTimeLeft = 0;
+
+function log(m) {
   const l = document.getElementById("log");
   const t = new Date().toLocaleTimeString();
-  l.innerText += `[${t}] ${m}\n`;
+  l.innerHTML += `<span style="color:#0f0">[${t}]</span> ${m}<br>`;
   l.scrollTop = l.scrollHeight;
 }
 
-// Chỉ hiện số 1-13 thôi, không A J Q K
-function cardToNumber(c){
-  return c >= 1 && c <= 13 ? c : "?";
+function toggleButtons(disabled) {
+  isProcessing = disabled;
+  document.getElementById("btnHigher").disabled = disabled;
+  document.getElementById("btnLower").disabled = disabled;
 }
 
-function connectWS(){
+function showAutoTimer(timeLeft) {
+  serverTimeLeft = timeLeft;
+  const timerText = document.getElementById("autoTimerText");
+  const timerProgress = document.getElementById("autoTimerProgress");
+  
+  timerText.style.display = "block";
+  timerText.textContent = `${timeLeft}s`;
+  
+  const percent = (timeLeft / 120) * 100;
+  timerProgress.style.width = percent + "%";
+
+  // Cảnh báo khi còn 30s
+  if (timeLeft <= 30) {
+    timerText.classList.add("warning");
+  } else {
+    timerText.classList.remove("warning");
+  }
+}
+
+function hideAutoTimer() {
+  document.getElementById("autoTimerText").style.display = "none";
+  document.getElementById("autoTimerProgress").style.width = "100%";
+}
+
+function getSuitSymbol(rank) {
+  const suits = {
+    1: '♠️', // Spade
+    2: '♥️', // Heart
+    3: '♦️', // Diamond
+    4: '♣️'  // Club
+  };
+  return suits[rank] || '?';
+}
+
+function renderCard(cardObj) {
+  const nums = document.querySelectorAll(".num");
+  const suits = document.querySelectorAll(".suit");
+
+  if (!cardObj || !cardObj.card) {
+    nums.forEach(el => el.textContent = "?");
+    suits.forEach(el => el.innerHTML = "");
+    return;
+  }
+
+  const num = cardObj.card;
+  const isRed = [2, 3].includes(cardObj.rank); // Heart & Diamond
+
+  nums.forEach(el => {
+    el.textContent = num;
+    el.className = "num " + (isRed ? "red" : "black");
+  });
+
+  suits.forEach(el => {
+    el.innerHTML = getSuitSymbol(cardObj.rank);
+    el.className = "suit " + (isRed ? "red" : "black");
+  });
+}
+
+function showJackpot() {
+  const explosion = document.createElement("div");
+  explosion.className = "jackpot-explosion";
+  explosion.innerHTML = "🎰 JACKPOT! 🎰<br>4 LÁ K";
+  document.body.appendChild(explosion);
+  setTimeout(() => explosion.remove(), 3000);
+}
+
+function connectWS() {
   const url = document.getElementById("wsUrl").value.trim();
-  if(!url) return alert("Nhập URL WS đi bro!");
+  if (!url) return alert("Nhập URL đi bro!");
+
   socket = new WebSocket(url);
 
-  socket.onopen = () => log("Connected thành công!");
-  socket.onclose = () => log("Disconnected");
-  socket.onerror = () => log("Lỗi kết nối");
+  socket.onopen = () => log("<span style='color:cyan'>✅ Connected thành công!</span>");
+  socket.onclose = () => {
+    log("<span style='color:orange'>❌ Disconnected</span>");
+    hideAutoTimer();
+  };
+  socket.onerror = () => log("<span style='color:red'>⚠️ Lỗi kết nối</span>");
 
   socket.onmessage = (e) => {
     try {
       const msg = JSON.parse(e.data);
-      const eventName = msg.t;
-      const payload = msg.d;
-      if(!eventName) throw "No t";
+      const t = msg.t;
+      const d = msg.d?.gameData || msg.d || {};
 
-      log(`← ${eventName}`);
-      const gd = payload?.gameData;
+      log(`📨 <b>${t}</b>`);
 
-      // 1. Bắt đầu session → hiện số đầu tiên
-      if(eventName === 'game:session_started' && gd?.currentCard){
-        document.getElementById("currentCard").innerText = cardToNumber(gd.currentCard);
-        updateInfo(gd);
-      }
-
-      // 2. Kết quả vòng
-      if(eventName === 'game:round_result'){
-        const result = gd?.result;
-        const next = gd?.round?.nextCard;
-
-        if(result === 'win' && next){
-          document.getElementById("currentCard").innerText = cardToNumber(next);
-          log(`WIN +${gd.winAmount || 0} → Lá mới: ${next}`);
-          if(gd.jackpot) log(`JACKPOT!!! +${gd.jackpot.payoutAmount} ĐỈNH CAO!`);
+      // ========== AUTO GUESS TIMER từ SERVER ==========
+      if (t === 'game:guess_timer') {
+        const timeLeft = d.timeLeft || 0;
+        showAutoTimer(timeLeft);
+        
+        if (timeLeft <= 10 && timeLeft > 0) {
+          log(`<span style="color:#ff6600">⚠️ Còn ${timeLeft}s! Chọn ngay hoặc sẽ auto guess!</span>`);
         }
-        if(result === 'lose'){
-          document.getElementById("currentCard").innerText = "LOSE";
-          setTimeout(() => document.getElementById("currentCard").innerText = "?", 2000);
+        return;
+      }
+
+      // ========== START RECEIVED - XÓA PHẦN NÀY ==========
+
+      // ========== AUTO GUESS từ SERVER ==========
+      if (t === 'game:auto_guess') {
+        hideAutoTimer();
+        const choice = d.choice || 'over';
+        const result = d.result?.result || 'unknown';
+        log(`<span style="color:#ff00ff;font-size:20px">🤖 AUTO GUESS: ${choice.toUpperCase()}</span>`);
+        
+        if (result === 'win') {
+          const winAmt = d.result?.winAmount || 0;
+          log(`<span style="color:#00ff00">✅ AUTO WIN! +${winAmt.toLocaleString()}</span>`);
+        } else if (result === 'lose') {
+          log(`<span style="color:#ff0000">❌ AUTO LOSE</span>`);
         }
-        updateInfo(gd);
+        
+        if (d.result?.round?.nextCard) {
+          renderCard(d.result.round.nextCard);
+        }
+        
+        updateInfo(d.result);
+        return;
       }
 
-      // Các event khác
-      if(eventName === 'game:deposit_success' || 
-         eventName === 'game:session_ended' || 
-         eventName === 'game:stats'){
-        updateInfo(gd);
+      // Start game response
+      if (t === 'game:session_started') {
+        log(`<span style="color:#00ff00">✅ Session đã bắt đầu!</span>`);
+        
+        if (d.currentCard) renderCard(d.currentCard);
+        if (d.betAmount !== undefined) {
+          document.getElementById("currentBet").textContent = Number(d.betAmount).toLocaleString();
+          log(`💰 Đã bet: <b>${Number(d.betAmount).toLocaleString()}</b> (toàn bộ)`);
+        }
+        updateInfo(d);
+        // Timer đã chạy từ lúc nhấn Start rồi
       }
 
-      // Reset khi thua hoặc end
-      if(eventName === 'game:session_ended' || gd?.result === 'lose'){
-        setTimeout(() => document.getElementById("currentCard").innerText = "?", 1500);
+      // Guess received
+      if (t === 'game:guess_received') {
+        log(`⏳ Server đã nhận guess, đang xử lý...`);
+        // KHÔNG hiện processing animation nữa, để timer chạy
       }
 
-    } catch(err){
-      log("RAW ← " + e.data);
+      // Round result
+      if (t === 'game:round_result') {
+        hideAutoTimer(); // Ẩn timer cũ khi có kết quả
+        
+        const result = d.result;
+        const next = d.round?.nextCard;
+        const betAmt = d.round?.betAmount || 0;
+
+        if (result === 'win' && next) {
+          renderCard(next);
+          const winAmt = d.winAmount || 0;
+          const mult = d.multiplier || 1.9;
+          log(`<span style="color:#00ff00;font-size:18px">✅ WIN! +${winAmt.toLocaleString()} (x${mult})</span> → Lá: <b>${next.card}${getSuitSymbol(next.rank)}</b>`);
+          
+          document.getElementById("currentBet").textContent = Number(d.tableBalance || 0).toLocaleString();
+
+          if (d.jackpot) {
+            log(`<span style="color:gold;font-size:22px">🎰🎰🎰 JACKPOT 4 LÁ K!!! +${d.jackpot.payoutAmount?.toLocaleString() || '100,000+'} VNĐ</span>`);
+            showJackpot();
+          }
+          
+          // Sau khi win, server sẽ tự động gửi timer mới
+        }
+
+        if (result === 'lose') {
+          log(`<span style="color:#ff0000;font-size:18px">❌ LOSE -${betAmt.toLocaleString()}</span>`);
+          document.querySelector(".card-center .num").textContent = "💀";
+          document.querySelector(".card-center .num").className = "num red";
+          document.getElementById("currentBet").textContent = "0";
+          setTimeout(() => renderCard(null), 2000);
+        }
+
+        if (result === 'draw') {
+          log(`<span style="color:#ffaa00">🔄 DRAW - Hoàn tiền ${betAmt.toLocaleString()}</span>`);
+        }
+
+        updateInfo(d);
+      }
+
+      // Other events
+      if (t === 'game:deposit_success') {
+        log(`<span style="color:#00ffff">✅ Nạp thành công: +${d.depositAmount?.toLocaleString() || 0}</span>`);
+        updateInfo(d);
+      }
+
+      if (t === 'game:session_ended') {
+        log(`<span style="color:#ffaa00">🏁 Session kết thúc. Rút: ${d.withdrawAmount?.toLocaleString() || 0}</span>`);
+        document.getElementById("currentBet").textContent = "0";
+        renderCard(null);
+        hideAutoTimer();
+        updateInfo(d);
+      }
+
+      if (t === 'game:stats') {
+        const stats = d.stats || {};
+        log(`<span style="color:cyan">📊 Stats: Rounds=${stats.totalRounds} | Wins=${stats.totalWins} | WinRate=${stats.winRate}% | Jackpots=${stats.totalJackpots}</span>`);
+        updateInfo(d);
+      }
+
+      if (t === 'game:error') {
+        log(`<span style="color:red">❌ ERROR: ${d.error || 'Unknown error'}</span>`);
+        hideAutoTimer();
+      }
+
+    } catch (err) {
+      log("🔸 RAW ← " + e.data);
     }
   };
 }
 
-function updateInfo(gd){
-  if(gd?.tableBalance !== undefined) document.getElementById("table").innerText = Number(gd.tableBalance).toLocaleString();
-  if(gd?.userBalance !== undefined) document.getElementById("user").innerText = Number(gd.userBalance).toLocaleString();
-  if(gd?.session?.winStreak !== undefined) document.getElementById("streak").innerText = gd.session.winStreak;
+function updateInfo(d) {
+  if (d.tableBalance !== undefined) document.getElementById("table").textContent = Number(d.tableBalance).toLocaleString();
+  if (d.userBalance !== undefined) document.getElementById("user").textContent = Number(d.userBalance).toLocaleString();
+  if (d.session?.winStreak !== undefined) document.getElementById("streak").textContent = d.session.winStreak;
+  if (d.session?.winSteak !== undefined) document.getElementById("streak").textContent = d.session.winSteak;
 }
 
-function disconnectWS(){ if(socket) socket.close(); }
+function send(event, data = {}) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return alert("❌ Chưa kết nối!");
+  if (isProcessing && (event === 'game:guess' || event === 'game:start')) {
+    return log(`<span style="color:orange">⚠️ Đang xử lý, vui lòng đợi!</span>`);
+  }
 
-function send(event, data){
-  if(!socket || socket.readyState !== 1) return alert("Chưa kết nối!");
-  socket.send(JSON.stringify({ t: event, d: data }));
-  log(`→ ${event}`);
+  const payload = { t: event, d: { userId: USER_ID, ...data } };
+  socket.send(JSON.stringify(payload));
+  log(`📤 Sent: <b>${event}</b>`);
+
+  // ✅ Không cần start animation ở đây nữa, server sẽ gửi ACK
 }
 
-// Thay userId của bạn vào đây
-const USER_ID = "66203495-a53d-417b-a920-06c9066032b0";
-
-function deposit()    { send("game:deposit",      {userId: USER_ID, amount:1000}); }
-function startGame()  { send("game:start",        {userId: USER_ID, betAmount:1000}); }
-function guessHigher(){ send("game:guess",        {userId: USER_ID, choice:"over",  betAmount:1000}); }
-function guessLower() { send("game:guess",        {userId: USER_ID, choice:"under", betAmount:1000}); }
-function endSession() { send("game:end_session", {userId: USER_ID}); }
-function getStats()   { send("game:get_stats",    {userId: USER_ID}); }
+function deposit()     { send("game:deposit", { amount: 1000 }); }
+function startGame()   { send("game:start"); }
+function guessHigher() { send("game:guess", { choice: "over" }); }
+function guessLower()  { send("game:guess", { choice: "under" }); }
+function endSession()  { send("game:end_session"); }
+function getStats()    { send("game:get_stats"); }
+function disconnectWS() { if(socket) socket.close(); }
 </script>
 </body>
 </html>
