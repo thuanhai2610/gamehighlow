@@ -127,12 +127,14 @@ export class GameGateway
       this.processingGuess.set(userId, true);
 
       const result = await this.gameService.startSession(userId);
+
       this.startGuessTime(userId, client);
 
       const response = this.createResponse(1, {
         currentCard: result.currentCard,
         tableBalance: result.tableBalance,
         betAmount: result.betAmount,
+        nextWin: result.nextWin,
         session: {
           userId: result.session.userId,
           winSteak: result.session.winStreak,
@@ -204,6 +206,7 @@ export class GameGateway
         multiplier,
         tableBalance,
         winAmount,
+        nextWin: result.nextWin,
       });
       const messageResponseGameResult = JSON.stringify({
         t: 'game:round_result',
@@ -349,6 +352,7 @@ export class GameGateway
           },
           winAmount: result.winAmount,
           tableBalance: result.tableBalance,
+          nextWin: result.nextWin,
         },
       });
 

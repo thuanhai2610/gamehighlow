@@ -134,11 +134,14 @@ export class GameService {
     await this.sessionRepo.save(session);
     this.sessions.set(userId, session);
 
+    const nextWin = this.nextAmount(card, session.tableBalance);
+
     return {
       currentCard: card,
       session,
       tableBalance: session.tableBalance,
       betAmount: actualBetAmount,
+      nextWin,
     };
   }
 
@@ -156,7 +159,7 @@ export class GameService {
     await this.sessionRepo.save(session);
     this.sessions.set(userId, session);
 
-    return await this.processGuess(userId, choice, actualBetAmount, session);
+    return this.processGuess(userId, choice, actualBetAmount, session);
   }
 
   private async processGuess(
@@ -191,6 +194,7 @@ export class GameService {
           amount: betAmount,
         });
         await this.betRepo.save(bet);
+        const nextWin = this.nextAmount(nextCard, session.tableBalance);
         return {
           result: 'draw',
           message: 'Hoa',
@@ -203,6 +207,7 @@ export class GameService {
           winAmount: 0,
           session,
           tableBalance: session.tableBalance,
+          nextWin,
         };
       }
       const win =
@@ -374,8 +379,7 @@ export class GameService {
     if (cardsCanWin <= 6) return 2.0;
     if (cardsCanWin <= 8) return 1.6;
     if (cardsCanWin <= 10) return 1.4;
-    if (cardsCanWin >= 11) return 1.2;
-    return 1.1;
+    return 1.2;
   }
 
   private async setWin(
@@ -395,6 +399,7 @@ export class GameService {
     session.isPlaying = true;
     await this.sessionRepo.save(session);
     this.sessions.set(userId, session);
+    const nextWin = this.nextAmount(nextCard, session.tableBalance);
     return {
       result: 'win',
       round,
@@ -403,6 +408,7 @@ export class GameService {
       multiplier,
       tableBalance: session.tableBalance,
       winAmount,
+      nextWin,
     };
   }
 
@@ -430,6 +436,16 @@ export class GameService {
       multiplier,
       tableBalance: session.tableBalance,
       winAmount: 0,
+      nextWin: null,
+    };
+  }
+
+  nextAmount(currentCard: { card: number; rank: number }, betAmount: number) {
+    const upAmount = this.getMultiplier(currentCard, 'over');
+    const downAmount = this.getMultiplier(currentCard, 'under');
+    return {
+      up: betAmount * upAmount,
+      down: betAmount * downAmount,
     };
   }
 }

@@ -2,160 +2,286 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Higher/Lower Pro - Auto Guess Timer</title>
+<title>HIGHER/LOWER • NEON PRO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body{
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    background: linear-gradient(135deg, #0f0f23, #1a1a2e);
+  :root {
+    --bg: #0d001a;
+    --card-bg: #1a0033;
+    --primary: #00ffea;
+    --success: #00ff88;
+    --danger: #ff0066;
+    --gold: #ffd700;
+    --glass: rgba(20, 0, 50, 0.6);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Orbitron', 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f0020, #1a0033);
     color: #fff;
-    margin: 0;
-    padding: 20px;
     min-height: 100vh;
+    overflow-x: hidden;
+    background-image: 
+      radial-gradient(circle at 20% 80%, rgba(120,0,255,0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(0,255,200,0.15) 0%, transparent 50%);
   }
-  .box{
-    max-width: 1000px;
-    margin: 40px auto;
-    background: #16213e;
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  header {
     text-align: center;
+    padding: 30px 0;
+  }
+
+  h1 {
+    font-size: 4rem;
+    background: linear-gradient(90deg, #00ffff, #ff00ff, #ffff00);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 40px rgba(0,255,255,0.6);
+    animation: glow 3s infinite alternate;
+  }
+
+  @keyframes glow { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
+
+  small {
+    color: var(--primary);
+    font-size: 1.2rem;
+    display: block;
+    margin-top: 10px;
+    text-shadow: 0 0 15px var(--primary);
+  }
+
+  .connect-bar {
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0,255,255,0.3);
+    border-radius: 16px;
+    padding: 15px;
+    margin: 20px auto;
+    max-width: 600px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  input#wsUrl {
+    flex: 1;
+    min-width: 280px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 2px solid var(--primary);
+    background: rgba(0,0,0,0.6);
+    color: white;
+    font-size: 15px;
+  }
+
+  button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 16px;
+  }
+
+  button:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+
+  .btn-connect { background: #00ff88; color: black; }
+  .btn-disconnect { background: #ff3366; color: white; }
+
+  .game-board {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 40px 0;
     position: relative;
   }
-  h1{
-    color: #00ffff;
-    text-shadow: 0 0 20px #00ffff;
-  }
 
-  .game-area {
+  .card-area {
     position: relative;
-    width: 280px;
-    height: 400px;
-    margin: 40px auto;
+    width: 300px;
+    height: 420px;
+    margin: 30px 0;
   }
 
-  .card-container {
-    perspective: 1200px;
-    width: 280px;
-    height: 400px;
-  }
-
-  .playing-card {
+  .card {
     width: 100%;
     height: 100%;
-    background: white;
-    border-radius: 20px;
+    background: linear-gradient(135deg, #fff, #f0f0f0);
+    border-radius: 24px;
+    box-shadow: 
+      0 20px 60px rgba(0,0,0,0.8),
+      0 0 40px rgba(0,255,255,0.5);
     position: relative;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
     overflow: hidden;
-    transition: all 0.5s ease;
+    transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
-  .playing-card:hover { transform: translateY(-15px) rotateY(8deg); }
 
-  .card-corner { position: absolute; font-weight: bold; font-size: 36px; line-height: 1; }
-  .top-left { top: 16px; left: 20px; }
-  .bottom-right { bottom: 16px; right: 20px; transform: rotate(180deg); }
+  .card:hover { transform: scale(1.05) rotate(3deg); }
 
-  .card-center {
+  .card-value {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 200px;
+    font-size: 120px;
     font-weight: bold;
+    pointer-events: none;
   }
 
-  .suit { font-size: 56px; display: block; margin-top: -10px; }
+  .top-left { top: 20px; left: 25px; }
+  .bottom-right { bottom: 20px; right: 25px; transform: rotate(180deg); }
+  .center { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 220px; }
+
+  .suit { font-size: 80px; display: block; margin-top: -20px; }
   .red { color: #e74c3c; }
   .black { color: #2c3e50; }
 
-  /* Timer Overlay - XÓA PHẦN NÀY */
-
-  /* Auto Guess Timer - Hiển thị thời gian còn lại để guess */
-  .auto-timer-bar {
+  /* Timer Neon */
+  .timer-container {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 0 0 20px 20px;
-    overflow: hidden;
-    z-index: 5;
-  }
-
-  .auto-timer-progress {
-    height: 100%;
-    background: linear-gradient(90deg, #00ff00, #ffaa00, #ff0000);
-    transition: width 1s linear;
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
-  }
-
-  .auto-timer-text {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 8px 16px;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    height: 16px;
+    background: rgba(0,0,0,0.6);
     border-radius: 20px;
-    font-size: 18px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,255,234,0.6);
+  }
+
+  .timer-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #00ff88, #ffff00, #ff0066);
+    border-radius: 20px;
+    transition: width 1s linear;
+    box-shadow: 0 0 0 20px currentColor;
+  }
+
+  .timer-text {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 24px;
     font-weight: bold;
-    color: #00ffaa;
-    z-index: 6;
-    display: none;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    box-shadow: 0 0 30px rgba(0,255,255,0.6);
   }
 
-  .auto-timer-text.warning {
-    color: #ff0000;
-    animation: blink 0.5s infinite;
+  .timer-text.warning {
+    color: #ff0066;
+    animation: pulse 0.6s infinite;
+    border-color: #ff0066;
   }
 
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+  @keyframes pulse {
+    0%,100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.1); }
   }
 
-  button{
-    padding: 16px 36px;
-    margin: 10px;
-    font-size: 20px;
-    font-weight: bold;
-    border: none;
+  /* Next Win */
+  .next-win {
+    background: linear-gradient(45deg, #330066, #6600cc);
+    padding: 20px;
     border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.3s;
+    text-align: center;
+    margin: 20px 0;
+    border: 2px solid var(--primary);
+    box-shadow: 0 0 30px rgba(0,255,255,0.4);
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--gold);
+    text-shadow: 0 0 15px var(--gold);
   }
-  button:hover{ transform: scale(1.08); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-  button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-  }
-  .higher{background:#27ae60; color:white;}
-  .lower{background:#c0392b; color:white;}
-  .other{background:#2980b9; color:white;}
 
-  .info{
-    display:flex;
-    justify-content:center;
-    gap:50px;
-    background:#0f1629;
-    padding:25px;
-    border-radius:16px;
-    margin:30px 0;
-    font-size:22px;
+  .controls {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 30px 0;
   }
-  #log{
-    background:#000;
-    color:#0f0;
-    padding:20px;
-    height:400px;
-    overflow-y:auto;
+
+  .btn-higher {
+    background: linear-gradient(45deg, #00ff88, #00cc66);
+    color: black;
+    padding: 20px 50px;
+    font-size: 28px;
+    min-width: 200px;
+  }
+
+  .btn-lower {
+    background: linear-gradient(45deg, #ff3366, #cc0033);
+    color: white;
+    padding: 20px 50px;
+    font-size: 28px;
+    min-width: 200px;
+  }
+
+  .actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 30px 0;
+  }
+
+  .btn-action {
+    background: rgba(100,0,255,0.6);
+    color: white;
+    border: 1px solid var(--primary);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 30px 0;
+  }
+
+  .stat-box {
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0,255,255,0.3);
+    padding: 20px;
+    border-radius: 16px;
+    text-align: center;
+    font-size: 18px;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--primary);
+    margin-top: 8px;
+    text-shadow: 0 0 15px var(--primary);
+  }
+
+  #log {
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    padding: 20px;
+    height: 300px;
+    overflow-y: auto;
     font-family: 'Courier New', monospace;
-    border-radius:12px;
-    margin-top:30px;
-    text-align:left;
-    border: 1px solid #0f0;
+    font-size: 14px;
+    margin-top: 30px;
+    box-shadow: inset 0 0 20px rgba(0,255,255,0.2);
   }
 
   .jackpot-explosion {
@@ -163,345 +289,237 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 120px;
+    font-size: 100px;
     font-weight: bold;
     color: gold;
-    text-shadow: 0 0 40px gold;
-    animation: jackpotAnim 2.5s ease-out forwards;
+    text-shadow: 0 0 50px gold;
+    animation: explode 3s ease-out forwards;
     pointer-events: none;
-    z-index: 999;
+    z-index: 9999;
   }
 
-  @keyframes jackpotAnim {
-    0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
-    60% { transform: translate(-50%, -50%) scale(1.4) rotate(10deg); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(2) rotate(20deg); opacity: 0; }
+  @keyframes explode {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
   }
 
-  .bet-info {
-    background: #1a3a52;
-    padding: 15px;
-    border-radius: 10px;
-    margin: 20px 0;
-    font-size: 18px;
-    color: #ffaa00;
+  @media (max-width: 768px) {
+    h1 { font-size: 2.8rem; }
+    .card-area { width: 260px; height: 364px; }
+    .card-value.center { font-size: 180px; }
+    .controls { flex-direction: column; align-items: center; }
+    .btn-higher, .btn-lower { width: 90%; }
   }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="box">
-  <h1>HIGHER / LOWER PRO</h1>
-  <small>Auto All-in • Timer 120s • Auto Guess khi hết giờ</small>
 
-  <div style="margin:30px 0;">
-    WS URL: <input id="wsUrl" value="ws://localhost:3000/v1/api/ws" style="padding:12px;width:400px;border-radius:10px;border:none;font-size:16px;">
-    <button class="other" onclick="connectWS()">Connect</button>
-    <button class="other" onclick="disconnectWS()">Disconnect</button>
+<div class="container">
+  <header>
+    <h1>HIGHER / LOWER</h1>
+    <small>NEON PRO • Auto Guess 120s • All-in Mode</small>
+  </header>
+
+  <div class="connect-bar">
+    <input type="text" id="wsUrl" value="ws://localhost:3000/v1/api/ws" placeholder="WebSocket URL">
+    <button class="btn-connect" onclick="connectWS()">CONNECT</button>
+    <button class="btn-disconnect" onclick="disconnectWS()">DISCONNECT</button>
   </div>
 
-  <div class="bet-info">
-    ⏱️ Bạn có 120 giây để chọn • Nếu không chọn → Auto random Over/Under
-  </div>
+  <div class="next-win" id="nextWinDisplay">Next Win: <span id="nextWinAmount">0</span> VNĐ</div>
 
-  <!-- KHU VỰC CHƠI -->
-  <div class="game-area">
-    <div class="card-container">
-      <div class="playing-card" id="card">
-        <div class="card-corner top-left"><span class="num">?</span><span class="suit"></span></div>
-        <div class="card-center"><span class="num">?</span></div>
-        <div class="card-corner bottom-right"><span class="num">?</span><span class="suit"></span></div>
+  <div class="game-board">
+    <div class="card-area" id="cardArea">
+      <div class="card" id="card">
+        <div class="card-value top-left"><span class="num">?</span><span class="suit"></span></div>
+        <div class="card-value center"><span class="num">?</span></div>
+        <div class="card-value bottom-right"><span class="num">?</span><span class="suit"></span></div>
+      </div>
+
+      <div class="timer-container">
+        <div class="timer-bar" id="timerBar"></div>
+      </div>
+      <div class="timer-text" id="timerText">120s</div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-higher" id="btnHigher" onclick="guessHigher()">HIGHER</button>
+      <button class="btn-lower" id="btnLower" onclick="guessLower()">LOWER</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn-action" onclick="deposit()">+1000 Deposit</button>
+      <button class="btn-action" onclick="startGame()">START GAME</button>
+      <button class="btn-action" onclick="endSession()">END & WITHDRAW</button>
+      <button class="btn-action" onclick="getStats()">STATS</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-box">
+        <div>Table Balance</div>
+        <div class="stat-value" id="table">0</div>
+      </div>
+      <div class="stat-box">
+        <div>User Balance</div>
+        <div class="stat-value" id="user">0</div>
+      </div>
+      <div class="stat-box">
+        <div>Win Streak</div>
+        <div class="stat-value" id="streak">0</div>
+      </div>
+      <div class="stat-box">
+        <div>Current Bet</div>
+        <div class="stat-value" id="currentBet">0</div>
       </div>
     </div>
 
-    <!-- Auto Guess Timer -->
-    <div class="auto-timer-text" id="autoTimerText">120s</div>
-    <div class="auto-timer-bar">
-      <div class="auto-timer-progress" id="autoTimerProgress" style="width: 100%"></div>
-    </div>
+    <div id="log"></div>
   </div>
-
-  <div>
-    <button class="higher" id="btnHigher" onclick="guessHigher()">HIGHER (Over)</button>
-    <button class="lower" id="btnLower" onclick="guessLower()">LOWER (Under)</button>
-  </div>
-
-  <div style="margin-top:40px;">
-    <button class="other" onclick="deposit()">Deposit 1000</button>
-    <button class="other" onclick="startGame()">Start Game</button>
-    <button class="other" onclick="endSession()">End & Withdraw</button>
-    <button class="other" onclick="getStats()">Stats</button>
-  </div>
-
-  <div class="info">
-    <div>Table: <strong id="table">0</strong></div>
-    <div>User: <strong id="user">0</strong></div>
-    <div>Streak: <strong id="streak">0</strong></div>
-    <div>Bet: <strong id="currentBet">0</strong></div>
-  </div>
-
-  <h3>Log</h3>
-  <div id="log"></div>
 </div>
 
 <script>
-let socket;
-let isProcessing = false;
 const USER_ID = "9250fc64-dc44-4f8d-93bc-56b37ede9bac";
+let socket;
+let serverTimeLeft = 120;
 
-// Auto guess timer từ server
-let serverTimeLeft = 0;
-
-function log(m) {
+function log(msg) {
   const l = document.getElementById("log");
-  const t = new Date().toLocaleTimeString();
-  l.innerHTML += `<span style="color:#0f0">[${t}]</span> ${m}<br>`;
+  const time = new Date().toLocaleTimeString();
+  l.innerHTML += `<div style="color:#0f0">[${time}] ${msg}</div>`;
   l.scrollTop = l.scrollHeight;
 }
 
-function toggleButtons(disabled) {
-  isProcessing = disabled;
-  document.getElementById("btnHigher").disabled = disabled;
-  document.getElementById("btnLower").disabled = disabled;
+function updateNextWin(amount = 0) {
+  document.getElementById("nextWinAmount").textContent = Number(amount || 0).toLocaleString();
 }
 
-function showAutoTimer(timeLeft) {
-  serverTimeLeft = timeLeft;
-  const timerText = document.getElementById("autoTimerText");
-  const timerProgress = document.getElementById("autoTimerProgress");
-  
-  timerText.style.display = "block";
-  timerText.textContent = `${timeLeft}s`;
-  
-  const percent = (timeLeft / 120) * 100;
-  timerProgress.style.width = percent + "%";
-
-  // Cảnh báo khi còn 30s
-  if (timeLeft <= 30) {
-    timerText.classList.add("warning");
-  } else {
-    timerText.classList.remove("warning");
-  }
+function showTimer(seconds) {
+  serverTimeLeft = seconds;
+  const text = document.getElementById("timerText");
+  const bar = document.getElementById("timerBar");
+  text.textContent = `${seconds}s`;
+  const percent = (seconds / 120) * 100;
+  bar.style.width = percent + "%";
+  text.classList.toggle("warning", seconds <= 20);
 }
 
-function hideAutoTimer() {
-  document.getElementById("autoTimerText").style.display = "none";
-  document.getElementById("autoTimerProgress").style.width = "100%";
+function hideTimer() {
+  document.getElementById("timerText").style.display = "none";
+  document.getElementById("timerBar").style.width = "100%";
 }
 
-function getSuitSymbol(rank) {
-  const suits = {
-    1: '♠️', // Spade
-    2: '♥️', // Heart
-    3: '♦️', // Diamond
-    4: '♣️'  // Club
-  };
-  return suits[rank] || '?';
+function getSuit(rank) {
+  const s = ['♠','♥','♦','♣'];
+  return s[rank-1] || '?';
 }
 
-function renderCard(cardObj) {
+function renderCard(card) {
   const nums = document.querySelectorAll(".num");
   const suits = document.querySelectorAll(".suit");
 
-  if (!cardObj || !cardObj.card) {
-    nums.forEach(el => el.textContent = "?");
-    suits.forEach(el => el.innerHTML = "");
+  if (!card || !card.card) {
+    nums.forEach(n => n.textContent = "?");
+    suits.forEach(s => s.textContent = "");
     return;
   }
 
-  const num = cardObj.card;
-  const isRed = [2, 3].includes(cardObj.rank); // Heart & Diamond
-
-  nums.forEach(el => {
-    el.textContent = num;
-    el.className = "num " + (isRed ? "red" : "black");
+  const isRed = [2,3].includes(card.rank);
+  nums.forEach(n => {
+    n.textContent = card.card;
+    n.className = "num " + (isRed ? "red" : "black");
   });
-
-  suits.forEach(el => {
-    el.innerHTML = getSuitSymbol(cardObj.rank);
-    el.className = "suit " + (isRed ? "red" : "black");
+  suits.forEach(s => {
+    s.textContent = getSuit(card.rank);
+    s.className = "suit " + (isRed ? "red" : "black");
   });
 }
 
 function showJackpot() {
-  const explosion = document.createElement("div");
-  explosion.className = "jackpot-explosion";
-  explosion.innerHTML = "🎰 JACKPOT! 🎰<br>4 LÁ K";
-  document.body.appendChild(explosion);
-  setTimeout(() => explosion.remove(), 3000);
+  const el = document.createElement("div");
+  el.className = "jackpot-explosion";
+  el.innerHTML = "JACKPOT!<br>4 KINGS!";
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
 }
 
 function connectWS() {
   const url = document.getElementById("wsUrl").value.trim();
   if (!url) return alert("Nhập URL đi bro!");
-
   socket = new WebSocket(url);
 
-  socket.onopen = () => log("<span style='color:cyan'>✅ Connected thành công!</span>");
-  socket.onclose = () => {
-    log("<span style='color:orange'>❌ Disconnected</span>");
-    hideAutoTimer();
-  };
-  socket.onerror = () => log("<span style='color:red'>⚠️ Lỗi kết nối</span>");
+  socket.onopen = () => log("<span style='color:cyan'>CONNECTED</span>");
+  socket.onclose = () => { log("<span style='color:orange'>DISCONNECTED</span>"); hideTimer(); };
+  socket.onerror = () => log("<span style='color:red'>LỖI KẾT NỐI</span>");
 
   socket.onmessage = (e) => {
     try {
-      const msg = JSON.parse(e.data);
-      const t = msg.t;
-      const d = msg.d?.gameData || msg.d || {};
+      const {t, d} = JSON.parse(e.data);
+      log(`← <b>${t}</b>`);
 
-      log(`📨 <b>${t}</b>`);
-
-      // ========== AUTO GUESS TIMER từ SERVER ==========
-      if (t === 'game:guess_timer') {
-        const timeLeft = d.timeLeft || 0;
-        showAutoTimer(timeLeft);
-        
-        if (timeLeft <= 10 && timeLeft > 0) {
-          log(`<span style="color:#ff6600">⚠️ Còn ${timeLeft}s! Chọn ngay hoặc sẽ auto guess!</span>`);
-        }
+      if (t === "game:guess_timer") {
+        showTimer(d.timeLeft || 0);
         return;
       }
 
-      // ========== START RECEIVED - XÓA PHẦN NÀY ==========
+      if (t === "game:auto_guess") {
+        log(`<span style="color:magenta;font-size:18px">AUTO GUESS → ${d.choice?.toUpperCase()}</span>`);
+        if (d.result?.winAmount) log(`<span style="color:lime">AUTO WIN +${d.result.winAmount.toLocaleString()}</span>`);
+      }
 
-      // ========== AUTO GUESS từ SERVER ==========
-      if (t === 'game:auto_guess') {
-        hideAutoTimer();
-        const choice = d.choice || 'over';
-        const result = d.result?.result || 'unknown';
-        log(`<span style="color:#ff00ff;font-size:20px">🤖 AUTO GUESS: ${choice.toUpperCase()}</span>`);
-        
-        if (result === 'win') {
-          const winAmt = d.result?.winAmount || 0;
-          log(`<span style="color:#00ff00">✅ AUTO WIN! +${winAmt.toLocaleString()}</span>`);
-        } else if (result === 'lose') {
-          log(`<span style="color:#ff0000">❌ AUTO LOSE</span>`);
+      if (t === "game:session_started") {
+        renderCard(d.gameData?.currentCard);
+        document.getElementById("currentBet").textContent = Number(d.gameData?.betAmount || 0).toLocaleString();
+        updateNextWin(d.gameData?.nextWin);
+      }
+
+      if (t === "game:round_result") {
+        hideTimer();
+        const r = d.gameData;
+        if (r.result === "win") {
+          renderCard(r.round?.nextCard);
+          log(`<span style="color:lime;font-size:20px">WIN! +${(r.winAmount||0).toLocaleString()} ×${r.multiplier||1.9}</span>`);
+          updateNextWin(r.nextWin);
+          if (r.jackpot) showJackpot();
+        } else if (r.result === "lose") {
+          log(`<span style="color:red;font-size:20px">LOST</span>`);
+          document.querySelector(".center .num").textContent = "DEAD";
         }
-        
-        if (d.result?.round?.nextCard) {
-          renderCard(d.result.round.nextCard);
-        }
-        
-        updateInfo(d.result);
-        return;
+        updateInfo(d.gameData);
       }
 
-      // Start game response
-      if (t === 'game:session_started') {
-        log(`<span style="color:#00ff00">✅ Session đã bắt đầu!</span>`);
-        
-        if (d.currentCard) renderCard(d.currentCard);
-        if (d.betAmount !== undefined) {
-          document.getElementById("currentBet").textContent = Number(d.betAmount).toLocaleString();
-          log(`💰 Đã bet: <b>${Number(d.betAmount).toLocaleString()}</b> (toàn bộ)`);
-        }
-        updateInfo(d);
-        // Timer đã chạy từ lúc nhấn Start rồi
-      }
-
-      // Guess received
-      if (t === 'game:guess_received') {
-        log(`⏳ Server đã nhận guess, đang xử lý...`);
-        // KHÔNG hiện processing animation nữa, để timer chạy
-      }
-
-      // Round result
-      if (t === 'game:round_result') {
-        hideAutoTimer(); // Ẩn timer cũ khi có kết quả
-        
-        const result = d.result;
-        const next = d.round?.nextCard;
-        const betAmt = d.round?.betAmount || 0;
-
-        if (result === 'win' && next) {
-          renderCard(next);
-          const winAmt = d.winAmount || 0;
-          const mult = d.multiplier || 1.9;
-          log(`<span style="color:#00ff00;font-size:18px">✅ WIN! +${winAmt.toLocaleString()} (x${mult})</span> → Lá: <b>${next.card}${getSuitSymbol(next.rank)}</b>`);
-          
-          document.getElementById("currentBet").textContent = Number(d.tableBalance || 0).toLocaleString();
-
-          if (d.jackpot) {
-            log(`<span style="color:gold;font-size:22px">🎰🎰🎰 JACKPOT 4 LÁ K!!! +${d.jackpot.payoutAmount?.toLocaleString() || '100,000+'} VNĐ</span>`);
-            showJackpot();
-          }
-          
-          // Sau khi win, server sẽ tự động gửi timer mới
-        }
-
-        if (result === 'lose') {
-          log(`<span style="color:#ff0000;font-size:18px">❌ LOSE -${betAmt.toLocaleString()}</span>`);
-          document.querySelector(".card-center .num").textContent = "💀";
-          document.querySelector(".card-center .num").className = "num red";
-          document.getElementById("currentBet").textContent = "0";
-          setTimeout(() => renderCard(null), 2000);
-        }
-
-        if (result === 'draw') {
-          log(`<span style="color:#ffaa00">🔄 DRAW - Hoàn tiền ${betAmt.toLocaleString()}</span>`);
-        }
-
-        updateInfo(d);
-      }
-
-      // Other events
-      if (t === 'game:deposit_success') {
-        log(`<span style="color:#00ffff">✅ Nạp thành công: +${d.depositAmount?.toLocaleString() || 0}</span>`);
-        updateInfo(d);
-      }
-
-      if (t === 'game:session_ended') {
-        log(`<span style="color:#ffaa00">🏁 Session kết thúc. Rút: ${d.withdrawAmount?.toLocaleString() || 0}</span>`);
-        document.getElementById("currentBet").textContent = "0";
-        renderCard(null);
-        hideAutoTimer();
-        updateInfo(d);
-      }
-
-      if (t === 'game:stats') {
-        const stats = d.stats || {};
-        log(`<span style="color:cyan">📊 Stats: Rounds=${stats.totalRounds} | Wins=${stats.totalWins} | WinRate=${stats.winRate}% | Jackpots=${stats.totalJackpots}</span>`);
-        updateInfo(d);
-      }
-
-      if (t === 'game:error') {
-        log(`<span style="color:red">❌ ERROR: ${d.error || 'Unknown error'}</span>`);
-        hideAutoTimer();
-      }
+      if (t === "game:deposit_success") updateInfo(d.gameData);
+      if (t === "game:session_ended") { renderCard(null); hideTimer(); updateInfo(d.gameData); }
+      if (t === "game:stats") log(`<span style="color:cyan">STATS: ${JSON.stringify(d.gameData?.stats)}</span>`);
+      if (t === "game:error") log(`<span style="color:red">ERROR: ${d.error}</span>`);
 
     } catch (err) {
-      log("🔸 RAW ← " + e.data);
+      log("RAW: " + e.data);
     }
   };
 }
 
-function updateInfo(d) {
-  if (d.tableBalance !== undefined) document.getElementById("table").textContent = Number(d.tableBalance).toLocaleString();
-  if (d.userBalance !== undefined) document.getElementById("user").textContent = Number(d.userBalance).toLocaleString();
-  if (d.session?.winStreak !== undefined) document.getElementById("streak").textContent = d.session.winStreak;
-  if (d.session?.winSteak !== undefined) document.getElementById("streak").textContent = d.session.winSteak;
+function updateInfo(data) {
+  if (data?.tableBalance !== undefined) document.getElementById("table").textContent = Number(data.tableBalance).toLocaleString();
+  if (data?.userBalance !== undefined) document.getElementById("user").textContent = Number(data.userBalance).toLocaleString();
+  if (data?.session?.winStreak !== undefined) document.getElementById("streak").textContent = data.session.winStreak;
+  if (data?.nextWin !== undefined) updateNextWin(data.nextWin);
 }
 
-function send(event, data = {}) {
-  if (!socket || socket.readyState !== WebSocket.OPEN) return alert("❌ Chưa kết nối!");
-  if (isProcessing && (event === 'game:guess' || event === 'game:start')) {
-    return log(`<span style="color:orange">⚠️ Đang xử lý, vui lòng đợi!</span>`);
-  }
-
-  const payload = { t: event, d: { userId: USER_ID, ...data } };
-  socket.send(JSON.stringify(payload));
-  log(`📤 Sent: <b>${event}</b>`);
-
-  // ✅ Không cần start animation ở đây nữa, server sẽ gửi ACK
+function send(type, payload = {}) {
+  if (!socket || socket.readyState !== 1) return alert("Chưa kết nối!");
+  socket.send(JSON.stringify({ t: type, d: { userId: USER_ID, ...payload } }));
+  log(`→ <b>${type}</b>`);
 }
 
-function deposit()     { send("game:deposit", { amount: 1000 }); }
-function startGame()   { send("game:start"); }
-function guessHigher() { send("game:guess", { choice: "over" }); }
-function guessLower()  { send("game:guess", { choice: "under" }); }
-function endSession()  { send("game:end_session"); }
-function getStats()    { send("game:get_stats"); }
-function disconnectWS() { if(socket) socket.close(); }
+const deposit = () => send("game:deposit", { amount: 1000 });
+const startGame = () => send("game:start");
+const guessHigher = () => send("game:guess", { choice: "over" });
+const guessLower = () => send("game:guess", { choice: "under" });
+const endSession = () => send("game:end_session");
+const getStats = () => send("game:get_stats");
+const disconnectWS = () => socket?.close();
 </script>
 </body>
 </html>
