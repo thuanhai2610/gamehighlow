@@ -13,10 +13,12 @@ import { IncomingMessage } from 'http';
 import { RATE_LIMIT_CONFIG } from 'src/common/constant/rateLimit.constant';
 import { IpThrottlerGuard } from 'src/common/guards/limit.guard';
 import WebSocket, { Server } from 'ws';
-import { GameService } from './sicbo.service';
+import { UpdownService } from './updown.service';
 import { DepositDto } from './dto/deposit.dto';
 import { StartSessionDto } from './dto/start-session.dto';
 import { GuessDto } from './dto/place-bet.dto';
+import { JwtService } from '@nestjs/jwt';
+import { PayloadToken } from './interface/payloadToken.interface';
 
 type Client = WebSocket & { ip?: string };
 @UseGuards(IpThrottlerGuard)
@@ -34,12 +36,15 @@ export class GameGateway
   private readonly clients: Set<WebSocket> = new Set();
   private readonly instanceId: string;
   private readonly processingGuess: Map<string, boolean> = new Map();
-
   private readonly clientUser: Map<WebSocket, string> = new Map();
+  private readonly userClient: Map<string, WebSocket> = new Map();
   private readonly userClients: Map<string, Set<WebSocket>> = new Map();
   private readonly userTimers: Map<string, NodeJS.Timeout> = new Map();
   private readonly userCountDown: Map<string, number> = new Map();
-  constructor(private readonly gameService: GameService) {
+  constructor(
+    private readonly updownService: UpdownService,
+    private readonly jwtService: JwtService,
+  ) {
     this.instanceId = `message-${process.pid}-${Date.now()}`;
   }
   afterInit(server: Server) {
@@ -52,36 +57,70 @@ export class GameGateway
       client.close(1008, 'URL too long');
       return;
     }
+    const urlParams = new URLSearchParams(url.split('?')[1] || '');
+    const token = urlParams.get('token');
+    if (!token) {
+      client.close(1008, 'Token is missing');
+      return;
+    }
+    let payload: PayloadToken;
+    try {
+      payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_ACCESS_TOKEN,
+      });
+    } catch (error) {
+      const response = this.createResponse(
+        0,
+        null,
+        error.message || 'deposit fail',
+      );
+      const message = JSON.stringify({ t: 'game:error', d: response });
+      client.close(1008, 'Token is not accept');
+      client.send(message);
+      return;
+    }
+    const userId = payload.userId;
+    client['userId'] = userId;
 
+    const oldClients = this.userClient.get(userId);
+    if (oldClients && oldClients !== client) {
+      oldClients.close(4000, 'Another client connect');
+      this.logger.warn(`Closed old client of user ${userId}`);
+    }
+
+    this.clientUser.set(client, userId);
+    this.userClient.set(userId, client);
     const ip = req.socket.remoteAddress;
     client.ip = ip;
     this.clients.add(client);
-    this.logger.log(`Client connected from IP: ${ip}`);
+    if (!this.userClients.has(userId)) {
+      this.userClients.set(userId, new Set());
+    }
+    this.logger.log(
+      `User ${userId} with Client ${client.ip} connected from IP: ${ip}`,
+    );
   }
   handleDisconnect(client: Client) {
-    this.clients.delete(client);
-    const username = this.clientUser.get(client);
-    if (username) {
-      const timer = this.userTimers.get(username);
+    const userId = this.clientUser.get(client);
+    if (userId) {
+      this.logger.log(`User ${userId} disconnecting`);
+      const timer = this.userTimers.get(userId);
       if (timer) {
         clearInterval(timer);
-        this.userTimers.delete(username);
-        this.userCountDown.delete(username);
+        this.userTimers.delete(userId);
       }
-      const set = this.userClients.get(username);
-      if (set) {
-        set.delete(client);
-        if (set.size === 0) this.userClients.delete(username);
-      }
+      this.userClient.delete(userId);
+      this.userCountDown.delete(userId);
+      this.processingGuess.delete(userId);
       this.clientUser.delete(client);
-      this.logger.log(`User ${username} disconnected`);
+      this.clients.delete(client);
     }
   }
-  private createResponse<T>(status: 0 | 1, gameData?: T, error?: string) {
+  private createResponse<T>(ok: 0 | 1, d?: T, e?: string) {
     return {
-      status,
-      gameData: gameData ?? null,
-      error: error ?? null,
+      ok,
+      d: d ?? null,
+      e: e ?? null,
     };
   }
 
@@ -94,7 +133,7 @@ export class GameGateway
       const { userId, amount } = data;
       this.logger.log(`[GAME] User ${userId} depositing ${amount} to table`);
 
-      const result = await this.gameService.depositToTable(userId, amount);
+      const result = await this.updownService.depositToTable(userId, amount);
       const response = this.createResponse(1, {
         tableBalance: result.tableBalance,
         userBalance: result.userBalance,
@@ -126,7 +165,7 @@ export class GameGateway
       this.logger.log(`[GAME] User ${userId} starting session with bet`);
       this.processingGuess.set(userId, true);
 
-      const result = await this.gameService.startSession(userId);
+      const result = await this.updownService.startSession(userId);
 
       this.startGuessTime(userId, client);
 
@@ -179,7 +218,7 @@ export class GameGateway
       });
       client.send(message);
 
-      const result = await this.gameService.handleGuess(userId, choice);
+      const result = await this.updownService.handleGuess(userId, choice);
       const { round, bet, session, multiplier, tableBalance, winAmount } =
         result;
       const response = this.createResponse(1, {
@@ -188,7 +227,7 @@ export class GameGateway
           id: round?.roundId,
           currentCard: round?.currentCard,
           nextCard: round?.nextCard,
-          win: round?.win,
+          isWin: round?.isWin,
           betAmount: round?.betAmount,
         },
         bet: {
@@ -243,7 +282,7 @@ export class GameGateway
       }
 
       this.userCountDown.delete(userId);
-      const result = await this.gameService.endSession(userId);
+      const result = await this.updownService.endSession(userId);
       const { session, userBalance, withdrawAmount } = result;
       const response = this.createResponse(1, {
         userBalance,
@@ -277,7 +316,7 @@ export class GameGateway
   ) {
     try {
       const { userId } = data;
-      const stats = await this.gameService.getSessionStats(userId);
+      const stats = await this.updownService.getSessionStats(userId);
       const response = this.createResponse(1, stats);
       const message = JSON.stringify({ t: 'game:stats', d: response });
       client.send(message);
@@ -333,7 +372,7 @@ export class GameGateway
     this.logger.log(`[AUTO] User ${userId} auto-guessed: ${autoChoice}`);
 
     try {
-      const result = await this.gameService.handleGuess(userId, autoChoice);
+      const result = await this.updownService.handleGuess(userId, autoChoice);
 
       const response = this.createResponse(1, {
         auto: true,
@@ -343,7 +382,7 @@ export class GameGateway
             id: result.round?.roundId,
             currentCard: result.round?.currentCard,
             nextCard: result.round?.nextCard,
-            win: result.round?.win,
+            isWin: result.round?.isWin,
           },
           session: {
             winStreak: result.session.winStreak,

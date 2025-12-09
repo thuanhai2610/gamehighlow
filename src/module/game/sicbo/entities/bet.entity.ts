@@ -7,7 +7,6 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Round } from './round.entity';
-import { Min } from 'class-validator';
 
 @Entity()
 export class Bet {
@@ -24,15 +23,43 @@ export class Bet {
   @Column()
   choice: 'over' | 'under';
 
-  @Column({ default: 0 })
-  @Min(0)
+  @Column({
+    type: 'decimal',
+    precision: 65,
+    scale: 2,
+    nullable: false,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseInt(value) || 0,
+    },
+    default: 0,
+  })
   amount: number;
 
-  @Column({ default: 0 })
-  win: boolean;
+  @Column({
+    type: 'decimal',
+    precision: 65,
+    scale: 2,
+    nullable: false,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseInt(value) || 0,
+    },
+    default: 0,
+  })
+  isWin: 0 | 1;
 
-  @Column({ default: 0 })
-  @Min(0)
+  @Column({
+    type: 'decimal',
+    precision: 65,
+    scale: 2,
+    nullable: false,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseInt(value) || 0,
+    },
+    default: 0,
+  })
   winAmount: number;
 
   @CreateDateColumn()

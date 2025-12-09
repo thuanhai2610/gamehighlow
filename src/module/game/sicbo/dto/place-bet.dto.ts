@@ -1,4 +1,4 @@
-import { IsString, IsIn, IsNumber } from 'class-validator';
+import { IsString, IsIn, IsNumber, Min } from 'class-validator';
 
 export class GuessDto {
   @IsString()
@@ -8,5 +8,6 @@ export class GuessDto {
   choice: 'over' | 'under';
 
   @IsNumber()
+  @Min(0)
   betAmount: number;
 }

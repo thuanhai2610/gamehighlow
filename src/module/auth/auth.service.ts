@@ -36,7 +36,8 @@ export class AuthService {
     if (!userExist) throw new NotFoundException('Account is wrong');
     const isMatch = await argon2.verify(userExist.password, password);
     if (!isMatch) throw new UnauthorizedException('Password is wrong');
-    return userExist;
+    const token = this.generateToken(userExist.account, userExist.userId);
+    return { userExist, token };
   }
 
   generateToken(account: string, userId: string) {

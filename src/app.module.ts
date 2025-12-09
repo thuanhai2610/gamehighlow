@@ -9,9 +9,9 @@ import { RATE_LIMIT_CONFIG } from './common/constant/rateLimit.constant';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { APP_GUARD } from '@nestjs/core';
 import Redis from 'ioredis';
-import { Sicbo3Module } from './module/game/sicbo/sicbo.module';
 import { AuthModule } from './module/auth/auth.module';
 import { Middleware } from './common/middleware/middleware';
+import { UpdownModule } from './module/game/sicbo/updown.module';
 
 @Module({
   imports: [
@@ -35,7 +35,7 @@ import { Middleware } from './common/middleware/middleware';
         new ConfigService().get('REDIS_URL_CONNECT'),
       ),
     }),
-    Sicbo3Module,
+    UpdownModule,
     AuthModule,
   ],
   controllers: [AppController],

@@ -12,7 +12,7 @@ import { Jackpot } from './entities/jackbot.entity';
 import { User } from 'src/module/auth/entities/user.entity';
 
 @Injectable()
-export class GameService {
+export class UpdownService {
   private sessions: Map<string, PlayerSession> = new Map();
 
   constructor(
@@ -31,7 +31,7 @@ export class GameService {
   rollCard() {
     const cardNumber = Math.floor(Math.random() * 52) + 1;
     const card = ((cardNumber - 1) % 13) + 1;
-    const rank = Math.ceil(card / 13);
+    const rank = Math.ceil(cardNumber / 13);
 
     return {
       cardNumber,
@@ -50,7 +50,7 @@ export class GameService {
         winStreak: 0,
         cardsHistory: [],
         lastBetAmount: 0,
-        isPlaying: false,
+        isPlaying: 0,
         tableBalance: 0,
       });
       await this.sessionRepo.save(db);
@@ -82,7 +82,7 @@ export class GameService {
           winStreak: 0,
           cardsHistory: [],
           lastBetAmount: 0,
-          isPlaying: false,
+          isPlaying: 0,
           tableBalance: 0,
         });
         await query.manager.save(session);
@@ -126,7 +126,7 @@ export class GameService {
       session.winStreak = 0;
       session.cardsHistory = [];
     }
-    session.isPlaying = true;
+    session.isPlaying = 1;
 
     const card = this.rollCard();
     session.cardsHistory = [...(session.cardsHistory || []), card];
@@ -183,7 +183,7 @@ export class GameService {
           userId,
           currentCard,
           nextCard,
-          win: false,
+          isWin: 0,
           betAmount,
         });
         await this.roundRepo.save(round);
@@ -213,13 +213,14 @@ export class GameService {
       const win =
         (choice === 'over' && nextCard.rank > currentCard.rank) ||
         (choice === 'under' && nextCard.rank < currentCard.rank);
+      const isWinInt = win ? 1 : 0;
       const multiplier = 1.1;
       const winAmount = win ? betAmount * multiplier : 0;
       const round = this.roundRepo.create({
         userId,
         currentCard,
         nextCard,
-        win,
+        isWin: isWinInt,
         betAmount,
       });
       await this.roundRepo.save(round);
@@ -228,7 +229,7 @@ export class GameService {
         userId,
         choice,
         amount: betAmount,
-        win,
+        isWin: isWinInt,
         winAmount,
       });
       await this.betRepo.save(bet);
@@ -247,12 +248,13 @@ export class GameService {
         return this.setLose(userId, round, bet, session, multiplier, betAmount);
       }
     }
-    const win =
+    const isWin =
       (choice === 'over' && nextCard.card > currentCard.card) ||
       (choice === 'under' && nextCard.card < currentCard.card);
+    const isWinInt = isWin ? 1 : 0;
     let multiplier = this.getMultiplier(currentCard, choice);
     const isFirstGuess = session.cardsHistory.length === 1;
-    if (isFirstGuess && win) {
+    if (isFirstGuess && isWin) {
       const isEasyChoice =
         (currentCard.card <= 3 && choice === 'over') ||
         (currentCard.card >= 11 && choice === 'under');
@@ -260,13 +262,13 @@ export class GameService {
         multiplier = 1.0;
       }
     }
-    const winAmount = win ? betAmount * multiplier : 0;
+    const winAmount = isWin ? betAmount * multiplier : 0;
 
     const round = this.roundRepo.create({
       userId,
       currentCard,
       nextCard,
-      win,
+      isWin: isWinInt,
       betAmount,
     });
     await this.roundRepo.save(round);
@@ -275,11 +277,11 @@ export class GameService {
       userId,
       choice,
       amount: betAmount,
-      win,
+      isWin: isWinInt,
       winAmount,
     });
     await this.betRepo.save(bet);
-    if (win) {
+    if (isWin) {
       return this.setWin(
         userId,
         session,
@@ -298,11 +300,15 @@ export class GameService {
     const query = this.sessionRepo.manager.connection.createQueryRunner();
     await query.connect();
     await query.startTransaction('READ COMMITTED');
+    console.log(userId);
+
     try {
       const session = await query.manager.findOne(PlayerSession, {
         where: { userId },
         lock: { mode: 'pessimistic_write' },
       });
+      console.log(session);
+
       if (!session) throw new NotFoundException('Session not found');
 
       const user = await query.manager.findOne(User, {
@@ -316,7 +322,7 @@ export class GameService {
         user.balance += withdrawAmount;
         await query.manager.save(user);
       }
-      session.isPlaying = false;
+      session.isPlaying = 0;
       session.winStreak = 0;
       session.cardsHistory = [];
       session.tableBalance = 0;
@@ -341,10 +347,10 @@ export class GameService {
     if (!user) throw new NotFoundException('User not found');
     const totalRounds = await this.roundRepo.count({ where: { userId } });
     const totalWins = await this.roundRepo.count({
-      where: { userId, win: true },
+      where: { userId, isWin: 1 },
     });
     const totalJackpots = await this.jackpotRepo.count({ where: { userId } });
-    const bets = await this.betRepo.find({ where: { userId, win: true } });
+    const bets = await this.betRepo.find({ where: { userId, isWin: 1 } });
     const totalWinnings = bets.reduce((sum, bet) => sum + bet.winAmount, 0);
 
     return {
@@ -396,7 +402,7 @@ export class GameService {
     session.cardsHistory = [...(session.cardsHistory || []), nextCard];
     session.lastBetAmount = betAmount;
     session.winStreak = session.winStreak + 1;
-    session.isPlaying = true;
+    session.isPlaying = 1;
     await this.sessionRepo.save(session);
     this.sessions.set(userId, session);
     const nextWin = this.nextAmount(nextCard, session.tableBalance);
@@ -424,7 +430,7 @@ export class GameService {
     session.lastBetAmount = betAmount;
     session.winStreak = 0;
     session.tableBalance = 0;
-    session.isPlaying = false;
+    session.isPlaying = 0;
 
     await this.sessionRepo.save(session);
     this.sessions.set(userId, session);

@@ -12,5 +12,5 @@ export const databaseConfig = (
   password: configService.get<string>('DB_PASS', 'password'),
   database: configService.get<string>('DB_NAME', 'Game'),
   entities: [join(__dirname, '../../**/*.entity{.ts,.js}')],
-  synchronize: false,
+  synchronize: true,
 });

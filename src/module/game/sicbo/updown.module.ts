@@ -1,14 +1,13 @@
 import { Module } from '@nestjs/common';
+import { UpdownController } from './updown.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/module/auth/entities/user.entity';
 import { Round } from './entities/round.entity';
 import { Bet } from './entities/bet.entity';
-
+import { GameGateway } from './updown.gateway';
 import { PlayerSession } from './entities/player-session.entity';
 import { Jackpot } from './entities/jackbot.entity';
 import { JwtService } from '@nestjs/jwt';
-import { UpdownController } from './updown.controller';
-import { GameGateway } from './updown.gateway';
 import { UpdownService } from './updown.service';
 
 @Module({
@@ -18,4 +17,4 @@ import { UpdownService } from './updown.service';
   controllers: [UpdownController],
   providers: [UpdownService, GameGateway, JwtService],
 })
-export class UpDownModule {}
+export class UpdownModule {}

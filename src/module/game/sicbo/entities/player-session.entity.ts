@@ -1,4 +1,3 @@
-import { Min } from 'class-validator';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -22,16 +21,34 @@ export class PlayerSession {
   @Column('simple-json', { nullable: true })
   cardsHistory: { rank: number; card: number }[];
 
-  @Column({ default: 0 })
-  @Min(0)
+  @Column({
+    type: 'decimal',
+    precision: 65,
+    scale: 2,
+    nullable: false,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseInt(value) || 0,
+    },
+    default: 0,
+  })
   lastBetAmount: number;
 
-  @Column({ default: 0 })
-  @Min(0)
+  @Column({
+    type: 'decimal',
+    precision: 65,
+    scale: 2,
+    nullable: false,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseInt(value) || 0,
+    },
+    default: 0,
+  })
   tableBalance: number;
 
-  @Column({ default: false })
-  isPlaying: boolean;
+  @Column({ default: 0 })
+  isPlaying: 0 | 1;
 
   @CreateDateColumn()
   createdAt: Date;

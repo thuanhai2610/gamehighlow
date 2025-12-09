@@ -7,7 +7,6 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Bet } from './bet.entity';
-import { Min } from 'class-validator';
 
 @Entity()
 export class Round {
@@ -24,11 +23,10 @@ export class Round {
   @Column('simple-json')
   nextCard: { rank: number; card: number };
 
-  @Column({ default: false })
-  win: boolean;
+  @Column({ default: 0 })
+  isWin: 0 | 1;
 
   @Column()
-  @Min(0)
   betAmount: number;
 
   @CreateDateColumn()
